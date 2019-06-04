@@ -1,1 +1,5 @@
 .vscode/ipch/
+ddr_bench
+ddr_bench_arm
+pcm_bench
+pcm_bench_arm
