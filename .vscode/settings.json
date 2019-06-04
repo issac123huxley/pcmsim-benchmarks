@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "time.h": "c",
+        "stdint.h": "c",
+        "stat.h": "c",
+        "fs.h": "c",
+        "ioctl.h": "c"
+    }
+}
