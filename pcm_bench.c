@@ -69,12 +69,12 @@ int main(int argc, char *argv[])
 
 	// timings
 
-	printf("start_time_pcm.tv_sec  : %ld\n"
-	       "start_time_pcm.tv_nsec : %ld\n",
+	printf("start_time_pcm.tv_sec   : %ld\n"
+	       "start_time_pcm.tv_nsec  : %ld\n",
 	       start_time_pcm.tv_sec, start_time_pcm.tv_nsec);
 
-	printf("end_time_pcm.tv_sec    : %ld\n"
-	       "end_time_pcm.tv_nsec   : %ld\n",
+	printf("end_time_pcm.tv_sec     : %ld\n"
+	       "end_time_pcm.tv_nsec    : %ld\n",
 	       end_time_pcm.tv_sec, end_time_pcm.tv_nsec);
 
 	tv_sec_res = end_time_pcm.tv_sec - start_time_pcm.tv_sec;
@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
 	} else
 		tv_nsec_res = end_time_pcm.tv_nsec - start_time_pcm.tv_nsec;
 
-	printf("time to move %d MB     : %ld,%ld sec\n", N * sizeof(int),
+	printf("DDR to PCM of %d MB     : %ld,%ld sec\n", N * sizeof(int),
 	       tv_sec_res, tv_nsec_res);
 
 	free(buf_src);
