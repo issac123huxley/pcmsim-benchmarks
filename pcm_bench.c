@@ -29,7 +29,9 @@ int main(int argc, char *argv[])
 	int *		   addr; // equivalent to buf_cpy in ddr_bench
 	int		   fd;
 	struct timespec    start_time_pcm, end_time_pcm;
-	unsigned long long disk_size = 0;
+	unsigned long long disk_size   = 0;
+	__time_t	   tv_sec_res  = 0;
+	__syscall_slong_t  tv_nsec_res = 0;
 
 	// In order not to use cache:
 	// must be root to do that, so either sudo or su
@@ -50,7 +52,7 @@ int main(int argc, char *argv[])
 		handle_error("open");
 
 	ioctl(fd, BLKGETSIZE64, &disk_size);
-	printf("Number of bytes: %llu, this makes %.3f MB\n", disk_size,
+	printf("Size of pcm in bytes: %llu, or %.3f MB\n", disk_size,
 	       (double)disk_size / (1024 * 1024));
 
 	addr = mmap(NULL, disk_size, PROT_READ | PROT_WRITE,
@@ -65,20 +67,7 @@ int main(int argc, char *argv[])
 
 	clock_gettime(CLOCK_REALTIME, &end_time_pcm);
 
-	printf("start_time_pcm : %ld\n",
-	       ((start_time_pcm.tv_sec * 1000000000) + start_time_pcm.tv_nsec));
-
-	printf("end_time_pcm   : %ld\n",
-	       ((end_time_pcm.tv_sec * 1000000000) + end_time_pcm.tv_nsec));
-
-	printf("Time taken to copy %ldMb of data from one point in ddr to"
-	       " another in pcm: %ld ns\n",
-	       N * sizeof(int),
-	       ((end_time_pcm.tv_sec * 1000000000) + end_time_pcm.tv_nsec) -
-		       ((start_time_pcm.tv_sec * 1000000000) +
-			start_time_pcm.tv_nsec));
-
-	//Trying to implement something different
+	// timings
 
 	printf("start_time_pcm.tv_sec  : %ld\n"
 	       "start_time_pcm.tv_nsec : %ld\n",
@@ -87,6 +76,17 @@ int main(int argc, char *argv[])
 	printf("end_time_pcm.tv_sec    : %ld\n"
 	       "end_time_pcm.tv_nsec   : %ld\n",
 	       end_time_pcm.tv_sec, end_time_pcm.tv_nsec);
+
+	tv_sec_res = end_time_pcm.tv_sec - start_time_pcm.tv_sec;
+	if (start_time_pcm.tv_nsec > end_time_pcm.tv_nsec) {
+		tv_sec_res--;
+		tv_nsec_res = (1000000000 - start_time_pcm.tv_nsec) +
+			      end_time_pcm.tv_nsec;
+	} else
+		tv_nsec_res = end_time_pcm.tv_nsec - start_time_pcm.tv_nsec;
+
+	printf("time to move %d MB     : %ld,%ld sec\n", N * sizeof(int),
+	       tv_sec_res, tv_nsec_res);
 
 	free(buf_src);
 	munmap(addr, disk_size);
