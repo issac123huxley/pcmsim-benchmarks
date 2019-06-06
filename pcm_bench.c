@@ -9,7 +9,14 @@
 #include <linux/fs.h>
 #include <sys/ioctl.h>
 
-#define N 64 // 256MB : 4 * 64, 512 MB : 4 * 128
+/**
+ * 64  MB : 4 * 16  -> N 16
+ * 128 MB : 4 * 32  -> N 32
+ * 256 MB : 4 * 64  -> N 64
+ * 512 MB : 4 * 128 -> N 128
+ * 
+ */
+#define N 16
 
 #define handle_error(msg)                                                      \
 	do {                                                                   \
@@ -58,18 +65,28 @@ int main(int argc, char *argv[])
 
 	clock_gettime(CLOCK_REALTIME, &end_time_pcm);
 
-	printf("start_time_drr : %ld\n",
+	printf("start_time_pcm : %ld\n",
 	       ((start_time_pcm.tv_sec * 1000000000) + start_time_pcm.tv_nsec));
 
-	printf("end_time_drr.tv_nsec: %ld\n",
+	printf("end_time_pcm   : %ld\n",
 	       ((end_time_pcm.tv_sec * 1000000000) + end_time_pcm.tv_nsec));
 
 	printf("Time taken to copy %ldMb of data from one point in ddr to"
-	       "another: %ld ns\n",
+	       " another in pcm: %ld ns\n",
 	       N * sizeof(int),
 	       ((end_time_pcm.tv_sec * 1000000000) + end_time_pcm.tv_nsec) -
 		       ((start_time_pcm.tv_sec * 1000000000) +
 			start_time_pcm.tv_nsec));
+
+	//Trying to implement something different
+
+	printf("start_time_pcm.tv_sec  : %ld\n"
+	       "start_time_pcm.tv_nsec : %ld\n",
+	       start_time_pcm.tv_sec, start_time_pcm.tv_nsec);
+
+	printf("end_time_pcm.tv_sec    : %ld\n"
+	       "end_time_pcm.tv_nsec   : %ld\n",
+	       end_time_pcm.tv_sec, end_time_pcm.tv_nsec);
 
 	free(buf_src);
 	munmap(addr, disk_size);

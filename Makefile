@@ -1,8 +1,8 @@
 CC=gcc
-ARMCC=/path/to/arm/cc
+ARMCC=/home/luisky/PCMSIM_STAGE/kernelbuild/buildroot-2019.02.2/output/host/usr/bin/arm-linux-gnueabihf-gcc
 
-.PHONY: all
-all: ddr_bench pcm_bench
+.PHONY: amd64_all
+all: pcm_bench ddr_bench
 
 pcm_bench: pcm_bench.c
 	$(CC) -o pcm_bench pcm_bench.c
@@ -11,14 +11,17 @@ ddr_bench: ddr_bench.c
 	$(CC) -o ddr_bench ddr_bench.c
 
 .PHONY: arm_all
-arm_all: ddr_bench_arm pcm_bench_arm
+arm_all: pcm_bench_arm ddr_bench_arm export_arm
 
-ddr_bench_arm:
-	$(ARMCC) -o ddr_bench_arm pcm_bench.c
+pcm_bench_arm: pcm_bench.c
+	$(ARMCC) -o pcm_bench_arm pcm_bench.c
 
-pcm_bench_arm:
-	$(ARMCC) -o pcm_bench_arm ddr_bench.c
+ddr_bench_arm: ddr_bench.c
+	$(ARMCC) -o ddr_bench_arm ddr_bench.c
+
+export_arm:
+	sudo ./export_arm.sh
 
 .PHONY: clean
 clean:
-	rm pcm_bench ddr_bench ddr_bench_arm pcm_bench_arm
+	rm pcm_bench ddr_bench pcm_bench_arm ddr_bench_arm

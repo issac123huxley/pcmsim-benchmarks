@@ -4,7 +4,14 @@
 #include <time.h>
 #include <stdint.h>
 
-#define N 64 // 256MB : 4 * 64, 512 MB : 4 * 128
+/**
+ * 64  MB : 4 * 16  -> N 16
+ * 128 MB : 4 * 32  -> N 32
+ * 256 MB : 4 * 64  -> N 64
+ * 512 MB : 4 * 128 -> N 128
+ * 
+ */
+#define N 16
 
 int main(int argc, char **argv)
 {
@@ -44,11 +51,21 @@ int main(int argc, char **argv)
 	       ((end_time_ddr.tv_sec * 1000000000) + end_time_ddr.tv_nsec));
 
 	printf("Time taken to copy %dMb of data from one point in ddr to"
-	       "another: %ld ns\n",
+	       " another: %ld ns\n",
 	       N * sizeof(int),
 	       ((end_time_ddr.tv_sec * 1000000000) + end_time_ddr.tv_nsec) -
 		       ((start_time_ddr.tv_sec * 1000000000) +
 			start_time_ddr.tv_nsec));
+
+	//Trying to implement something different
+
+	printf("start_time_ddr.tv_sec  : %ld\n"
+	       "start_time_ddr.tv_nsec : %ld\n",
+	       start_time_ddr.tv_sec, start_time_ddr.tv_nsec);
+
+	printf("end_time_ddr.tv_sec    : %ld\n"
+	       "end_time_ddr.tv_nsec   : %ld\n",
+	       end_time_ddr.tv_sec, end_time_ddr.tv_nsec);
 
 	free(buf_src);
 	free(buf_cpy);
