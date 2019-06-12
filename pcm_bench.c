@@ -49,9 +49,10 @@ int main(int argc, char *argv[])
 	       (double)disk_size / (1024 * 1024));
 
 	clock_gettime(CLOCK_REALTIME, &start_time_pcm);
+
 	write(fd, buf_src, buf_size);
+
 	clock_gettime(CLOCK_REALTIME, &end_time_pcm);
-	close(fd);
 
 	// timings
 
@@ -71,10 +72,11 @@ int main(int argc, char *argv[])
 	} else
 		tv_nsec_res = end_time_pcm.tv_nsec - start_time_pcm.tv_nsec;
 
-	printf("DDR to DDR of %d MB sec : %ld\n"
-	       "DDR to DDR of %d MB ns  : %ld\n",
+	printf("DDR to PCM of %d MB sec : %ld\n"
+	       "DDR to PCM of %d MB ns  : %ld\n",
 	       N, tv_sec_res, N, tv_nsec_res);
 
+	close(fd);
 	free(buf_src);
 
 	return EXIT_SUCCESS;
