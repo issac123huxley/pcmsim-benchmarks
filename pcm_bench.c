@@ -75,7 +75,6 @@ int main(int argc, char *argv[])
 	       tv_sec_res, tv_nsec_res);
 
 	free(buf_src);
-	munmap(addr, disk_size);
 
 	return EXIT_SUCCESS;
 }
