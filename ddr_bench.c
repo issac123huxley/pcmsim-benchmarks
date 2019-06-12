@@ -35,8 +35,7 @@ int main(int argc, char **argv)
 
 	clock_gettime(CLOCK_REALTIME, &start_time_ddr);
 
-	for (int i = 0; i < buf_size; i++)
-		buf_cpy[i] = buf_src[i];
+	memcpy(buf_cpy, buf_src, buf_size);
 
 	clock_gettime(CLOCK_REALTIME, &end_time_ddr);
 
