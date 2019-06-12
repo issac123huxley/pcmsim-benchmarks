@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
 
 	memset(buf_src, 0, buf_size);
 
-	fd = open("/dev/pcm0", O_RDWR, 0777);
+	fd = open("/dev/pcm0", O_RDWR | O_DIRECT | O_SYNC, 0777);
 	if (fd == -1)
 		handle_error("open");
 
