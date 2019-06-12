@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdint.h>
+#include <string.h>
 
 #define N 64 //MB
 
