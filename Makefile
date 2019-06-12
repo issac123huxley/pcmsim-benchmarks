@@ -2,7 +2,7 @@ CC=gcc
 ARMCC=/home/luisky/PCMSIM_STAGE/kernelbuild/buildroot-2019.02.2/output/host/usr/bin/arm-linux-gnueabihf-gcc
 
 .PHONY: amd64_all
-all: pcm_bench ddr_bench
+amd64_all: pcm_bench ddr_bench
 
 pcm_bench: pcm_bench.c
 	$(CC) -o pcm_bench pcm_bench.c

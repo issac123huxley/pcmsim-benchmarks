@@ -1,4 +1,3 @@
-#include <sys/mman.h>
 #include <sys/types.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -6,17 +5,11 @@
 #include <time.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <string.h>
 #include <linux/fs.h>
 #include <sys/ioctl.h>
 
-/**
- * 64  MB : 4 * 16  -> N 16
- * 128 MB : 4 * 32  -> N 32
- * 256 MB : 4 * 64  -> N 64
- * 512 MB : 4 * 128 -> N 128
- * 
- */
-#define N 16
+#define N 64 //MB
 
 #define handle_error(msg)                                                      \
 	do {                                                                   \
@@ -26,7 +19,7 @@
 
 int main(int argc, char *argv[])
 {
-	int *		   addr; // equivalent to buf_cpy in ddr_bench
+	char *		   addr; // equivalent to buf_cpy in ddr_bench
 	int		   fd;
 	struct timespec    start_time_pcm, end_time_pcm;
 	unsigned long long disk_size   = 0;
@@ -40,12 +33,12 @@ int main(int argc, char *argv[])
 	//(maybe only useful for pcm_bench)
 	system("sync");
 
-	int *buf_src = malloc(sizeof(int) * N * 1024 * 1024);
+	int   buf_size = N * 1024 * 1024;
+	char *buf_src  = malloc(buf_size);
 	if (buf_src == NULL)
 		handle_error("malloc");
 
-	for (int i = 0; i < (N * 1024 * 1024); i++)
-		buf_src[i] = i;
+	memset(buf_src, 0, buf_size);
 
 	fd = open("/dev/pcm0", O_RDWR, 0777);
 	if (fd == -1)
@@ -55,17 +48,10 @@ int main(int argc, char *argv[])
 	printf("Size of pcm in bytes: %llu, or %.3f MB\n", disk_size,
 	       (double)disk_size / (1024 * 1024));
 
-	addr = mmap(NULL, disk_size, PROT_READ | PROT_WRITE,
-		    MAP_SHARED | MAP_SYNC, fd, 0);
-
-	close(fd);
-
 	clock_gettime(CLOCK_REALTIME, &start_time_pcm);
-
-	for (int i = 0; i < (N * 1024 * 1024); i++)
-		addr[i] = buf_src[i];
-
+	write(fd, buf_src, buf_size);
 	clock_gettime(CLOCK_REALTIME, &end_time_pcm);
+	close(fd);
 
 	// timings
 
