@@ -71,8 +71,9 @@ int main(int argc, char *argv[])
 	} else
 		tv_nsec_res = end_time_pcm.tv_nsec - start_time_pcm.tv_nsec;
 
-	printf("DDR to PCM of %d MB     : %ld sec\n%ld ns\n", N * sizeof(int),
-	       tv_sec_res, tv_nsec_res);
+	printf("DDR to DDR of %d MB sec : %ld\n"
+	       "DDR to DDR of %d MB ns  : %ld\n",
+	       N * sizeof(int), tv_sec_res, N * sizeof(int), tv_nsec_res);
 
 	free(buf_src);
 

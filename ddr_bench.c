@@ -64,8 +64,9 @@ int main(int argc, char **argv)
 	} else
 		tv_nsec_res = end_time_ddr.tv_nsec - start_time_ddr.tv_nsec;
 
-	printf("DDR to DDR of %d MB     : %ld,%ld sec\n", N * sizeof(int),
-	       tv_sec_res, tv_nsec_res);
+	printf("DDR to DDR of %d MB sec : %ld\n"
+	       "DDR to DDR of %d MB ns  : %ld\n",
+	       N * sizeof(int), tv_sec_res, N * sizeof(int), tv_nsec_res);
 
 	free(buf_src);
 	free(buf_cpy);
