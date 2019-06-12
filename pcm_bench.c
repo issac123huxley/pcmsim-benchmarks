@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
 
 	printf("DDR to DDR of %d MB sec : %ld\n"
 	       "DDR to DDR of %d MB ns  : %ld\n",
-	       N * sizeof(int), tv_sec_res, N * sizeof(int), tv_nsec_res);
+	       N, tv_sec_res, N, tv_nsec_res);
 
 	free(buf_src);
 

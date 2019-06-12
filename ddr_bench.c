@@ -4,14 +4,7 @@
 #include <time.h>
 #include <stdint.h>
 
-/**
- * 64  MB : 4 * 16  -> N 16
- * 128 MB : 4 * 32  -> N 32
- * 256 MB : 4 * 64  -> N 64
- * 512 MB : 4 * 128 -> N 128
- * 
- */
-#define N 16
+#define N 64 //MB
 
 int main(int argc, char **argv)
 {
@@ -28,20 +21,20 @@ int main(int argc, char **argv)
 	//(maybe only useful for ddr_bench)
 	system("sync");
 
-	int *buf_src = malloc(sizeof(int) * N * 1024 * 1024);
+	int   buf_size = N * 1024 * 1024;
+	char *buf_src  = malloc(buf_size);
 	if (buf_src == NULL)
 		exit(EXIT_FAILURE);
 
-	int *buf_cpy = malloc(sizeof(int) * N * 1024 * 1024);
+	char *buf_cpy = malloc(buf_size);
 	if (buf_cpy == NULL)
 		exit(EXIT_FAILURE);
 
-	for (int i = 0; i < (N * 1024 * 1024); i++)
-		buf_src[i] = i;
+	memset(buf_src, 0, buf_size);
 
 	clock_gettime(CLOCK_REALTIME, &start_time_ddr);
 
-	for (int i = 0; i < (N * 1024 * 1024); i++)
+	for (int i = 0; i < buf_size; i++)
 		buf_cpy[i] = buf_src[i];
 
 	clock_gettime(CLOCK_REALTIME, &end_time_ddr);
@@ -66,7 +59,7 @@ int main(int argc, char **argv)
 
 	printf("DDR to DDR of %d MB sec : %ld\n"
 	       "DDR to DDR of %d MB ns  : %ld\n",
-	       N * sizeof(int), tv_sec_res, N * sizeof(int), tv_nsec_res);
+	       N, tv_sec_res, N, tv_nsec_res);
 
 	free(buf_src);
 	free(buf_cpy);

@@ -4,6 +4,7 @@
         "stdint.h": "c",
         "stat.h": "c",
         "fs.h": "c",
-        "ioctl.h": "c"
-    }
+        "ioctl.h": "c",
+        "fcntl.h": "c"
+}
 }
