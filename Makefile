@@ -8,7 +8,7 @@ pcmsim_benchmark_amd64: pcmsim_benchmark.c
 	$(CC) -o pcmsim_benchmark pcmsim_benchmark.c
 
 .PHONY: arm
-arm: pcmsim_benchmark_arm
+arm: pcmsim_benchmark_arm export_arm
 
 pcmsim_benchmark_arm: pcmsim_benchmark.c
 	$(ARMCC) -o pcmsim_benchmark pcmsim_benchmark.c
@@ -18,5 +18,5 @@ export_arm:
 
 .PHONY: clean
 clean:
-	rm pcmsim_benchmark
+	$(RM) pcmsim_benchmark
 		 
