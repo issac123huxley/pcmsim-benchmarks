@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 		printf("usage: %s mem_type [pcm_mode] [nb_loop] \n"
 		       "mem_types are %s and %s\n"
 		       "modes are %c for write and %c for mmap\n"
-		       "FOR DDR PUT 0 INSTEAD\n",
+		       "FOR DDR PUT 0 INSTEAD (or any letter)\n",
 		       argv[0], DDR_STR, PCM_STR, PCM_MODE_WRITE,
 		       PCM_MODE_MMAP);
 		exit(EXIT_FAILURE);
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 
 	for (int i = 0; i < nb_loop; i++) {
 		printf("Iteration number %d : \n", i);
-		if (pcm_mode == PCM_MODE_WRITE)
+		if (!strcmp(mem_type, PCM_STR) && (pcm_mode == PCM_MODE_WRITE))
 			bench_write(fd, buf_src, buf_size);
 		else
 			bench_memcpy(addr, buf_src, buf_size, mem_type);
