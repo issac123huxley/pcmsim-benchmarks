@@ -6,7 +6,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 rm /run/media/luisky/rootfs/root/pcmsim_benchmark
-cp ddr_bench_arm /run/media/luisky/rootfs/root/pcmsim_benchmark
+cp pcmsim_benchmark /run/media/luisky/rootfs/root/pcmsim_benchmark
 
 if [ $? = 1 ]
 then

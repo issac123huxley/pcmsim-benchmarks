@@ -147,6 +147,8 @@ void bench_write(int fd, void *src, size_t len)
 {
 	struct timespec start_time, end_time;
 
+	lseek(fd, 0, SEEK_SET);
+
 	clock_gettime(CLOCK_REALTIME, &start_time);
 
 	write(fd, src, len);
