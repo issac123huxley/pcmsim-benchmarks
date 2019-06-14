@@ -14,12 +14,11 @@
 #define BUF_SIZE_MB 64
 #define BUF_SIZE BUF_SIZE_MB * 1024 * 1024
 #define NB_LOOP 10
-#define PCM_STR "PCM"
-#define DDR_STR "DDR"
 
-#define MODE_DDR "ddr"
-#define MODE_PCM_WRITE "pcm_w"
-#define MODE_PCM_MMAP "pcm_m"
+#define DDR_STR "DDR"
+#define PCM_STR "PCM"
+#define PCM_MODE_WRITE 'W'
+#define PCM_MODE_MMAP 'M'
 
 #define handle_error(msg)                                                      \
 	do {                                                                   \
@@ -29,18 +28,22 @@
 
 unsigned long long disk_size = 0;
 
-void bench_init(const char *mode, int *fd, char **addr);
+void bench_init(const char *mem_type, const char pcm_mode, int *fd,
+		char **addr);
 void bench_write(int fd, void *src, size_t len);
 void bench_memcpy(void *dest, void *src, size_t len, const char *mem_type);
 void print_timings(struct timespec *start_time, struct timespec *end_time,
 		   const char *mem_type);
-void bench_exit(const char *mode, int *fd, char **addr);
+void bench_exit(const char *mem_type, const char pcm_mode, int *fd,
+		char **addr);
 
 int main(int argc, char *argv[])
 {
-	if (argc != 2) {
-		printf("usage: %s mode\nmodes are %s, %s, %s\n", argv[0],
-		       MODE_DDR, MODE_PCM_WRITE, MODE_PCM_MMAP);
+	if (argc < 2 || argc > 3) {
+		printf("usage: %s mem_type [mode]\nmem_types are %s and %s\n"
+		       "modes are %c for write and %c for mmap\n",
+		       argv[0], DDR_STR, PCM_STR, PCM_MODE_WRITE,
+		       PCM_MODE_MMAP);
 		exit(EXIT_FAILURE);
 	}
 
@@ -49,29 +52,32 @@ int main(int argc, char *argv[])
 	char *buf_src  = NULL;
 	char *addr     = NULL;
 
+	const char *mem_type = argv[1];
+	const char  pcm_mode = (argc == 3) ? argv[2] : '\0';
+
 	buf_src = malloc(buf_size);
 	if (!buf_src)
 		handle_error("malloc");
 
 	memset(buf_src, 0, buf_size);
 
-	bench_init(argv[1], &fd, &addr);
+	bench_init(mem_type, pcm_mode, &fd, &addr);
 
 	for (int i = 0; i < NB_LOOP; i++) {
 		printf("Iteration number %d : \n", i);
-		if (!strcmp(argv[1], MODE_PCM_WRITE))
+		if (pcm_mode == PCM_MODE_WRITE)
 			bench_write(fd, buf_src, buf_size);
 		else
-			bench_memcpy(addr, buf_src, buf_size, argv[1]);
+			bench_memcpy(addr, buf_src, buf_size, mem_type);
 	}
 
-	bench_exit(argv[1], &fd, &addr);
+	bench_exit(mem_type, pcm_mode, &fd, &addr);
 	free(buf_src);
 
 	return EXIT_SUCCESS;
 }
 
-void bench_init(const char *mode, int *fd, char **addr)
+void bench_init(const char *mode, const char pcm_mode, int *fd, char **addr)
 {
 	/* 
 	// In order not to use cache:
@@ -81,14 +87,13 @@ void bench_init(const char *mode, int *fd, char **addr)
 	//(maybe only useful for pcm_bench)
 	system("sync");*/
 
-	if (!strcmp(mode, MODE_DDR)) {
+	if (!strcmp(mode, DDR_STR)) {
 		*addr = malloc(BUF_SIZE);
 
 		if (!(*addr))
 			exit(EXIT_FAILURE);
 
-	} else if (!strcmp(mode, MODE_PCM_WRITE) ||
-		   !(strcmp(mode, MODE_PCM_MMAP))) {
+	} else if (!strcmp(mode, PCM_STR)) {
 		*fd = open("/dev/pcm0", O_RDWR | O_SYNC, 0777);
 
 		if (*fd == -1)
@@ -98,7 +103,7 @@ void bench_init(const char *mode, int *fd, char **addr)
 		printf("Size of pcm in bytes: %llu, or %.3f MB\n", disk_size,
 		       (double)disk_size / (1024 * 1024));
 
-		if (!strcmp(mode, MODE_PCM_MMAP)) {
+		if (!strcmp(mode, PCM_MODE_MMAP)) {
 			*addr = mmap(NULL, disk_size, PROT_READ | PROT_WRITE,
 				     MAP_SHARED | MAP_SYNC, *fd, 0);
 			if (!(*addr))
@@ -106,8 +111,8 @@ void bench_init(const char *mode, int *fd, char **addr)
 		}
 
 	} else {
-		printf("no such mode exists\nmodes are %s, %s, %s\n", MODE_DDR,
-		       MODE_PCM_WRITE, MODE_PCM_MMAP);
+		printf("no such memtype exists\nmmem_types are %s and %s\n",
+		       DDR_STR, PCM_STR);
 	}
 }
 
@@ -165,12 +170,12 @@ void print_timings(struct timespec *start_time, struct timespec *end_time,
 	       tv_nsec_res);
 }
 
-void bench_exit(const char *mode, int *fd, char **addr)
+void bench_exit(const char *mode, const char pcm_mode, int *fd, char **addr)
 {
-	if (!strcmp(mode, MODE_DDR)) {
+	if (!strcmp(mode, DDR_STR)) {
 		free(*addr);
 	} else {
-		if (!strcmp(mode, MODE_PCM_MMAP))
+		if (pcm_mode == PCM_MODE_MMAP)
 			munmap(addr, disk_size);
 		close(*fd);
 	}
