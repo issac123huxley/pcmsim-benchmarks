@@ -60,11 +60,6 @@ int main(int argc, char *argv[])
 		(argc >= 3) ? strtol(argv[2], &endptr, 10) : DEF_NB_LOOP;
 	const char pcm_mode = (argc == 4) ? *argv[3] : '\0';
 
-	printf("mem_type = %s\nnb_loop = %d\npcm_mode = %c\n", mem_type,
-	       nb_loop, pcm_mode);
-
-	exit(EXIT_SUCCESS);
-
 	buf_src = malloc(buf_size);
 	if (!buf_src)
 		handle_error("malloc");
