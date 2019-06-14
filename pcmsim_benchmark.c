@@ -119,7 +119,7 @@ void bench_init(const char *mem_type, const char pcm_mode, int *fd, char **addr)
 			}
 
 		} else {
-			printf("no such pcm_mode\pcm_modes are %c and %c\n",
+			printf("no such pcm_mode\npcm_modes are %c and %c\n",
 			       PCM_MODE_WRITE, PCM_MODE_MMAP);
 			exit(EXIT_FAILURE);
 		}
