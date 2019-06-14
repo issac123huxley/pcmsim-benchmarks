@@ -13,7 +13,7 @@
 
 #define BUF_SIZE_MB 64
 #define BUF_SIZE BUF_SIZE_MB * 1024 * 1024
-#define NB_LOOP 10
+#define DEF_NB_LOOP 10
 
 #define DDR_STR "DDR"
 #define PCM_STR "PCM"
@@ -39,8 +39,8 @@ void bench_exit(const char *mem_type, const char pcm_mode, int *fd,
 
 int main(int argc, char *argv[])
 {
-	if (argc < 2 || argc > 3) {
-		printf("usage: %s mem_type [mode]\nmem_types are %s and %s\n"
+	if (argc < 2 || argc > 4) {
+		printf("usage: %s mem_type [mode] [nb_loop] \nmem_types are %s and %s\n"
 		       "modes are %c for write and %c for mmap\n",
 		       argv[0], DDR_STR, PCM_STR, PCM_MODE_WRITE,
 		       PCM_MODE_MMAP);
@@ -51,9 +51,14 @@ int main(int argc, char *argv[])
 	int   buf_size = BUF_SIZE_MB * 1024 * 1024;
 	char *buf_src  = NULL;
 	char *addr     = NULL;
+	char *endptr;
 
 	const char *mem_type = argv[1];
 	const char  pcm_mode = (argc == 3) ? *argv[2] : '\0';
+	const int   nb_loop =
+		(argc == 4) ? strtol(argv[3], &endptr, 10) : DEF_NB_LOOP;
+
+	//TODO: check errno for strtol
 
 	buf_src = malloc(buf_size);
 	if (!buf_src)
@@ -63,7 +68,7 @@ int main(int argc, char *argv[])
 
 	bench_init(mem_type, pcm_mode, &fd, &addr);
 
-	for (int i = 0; i < NB_LOOP; i++) {
+	for (int i = 0; i < nb_loop; i++) {
 		printf("Iteration number %d : \n", i);
 		if (pcm_mode == PCM_MODE_WRITE)
 			bench_write(fd, buf_src, buf_size);
