@@ -40,10 +40,9 @@ void bench_exit(const char *mem_type, const char pcm_mode, int *fd,
 int main(int argc, char *argv[])
 {
 	if (argc < 2 || argc > 4) {
-		printf("usage: %s mem_type [pcm_mode] [nb_loop] \n"
+		printf("usage: %s mem_type [nb_loop] [pcm_mode] \n"
 		       "mem_types are %s and %s\n"
-		       "modes are %c for write and %c for mmap\n"
-		       "FOR DDR PUT 0 INSTEAD (or any letter)\n",
+		       "modes are %c for write and %c for mmap\n",
 		       argv[0], DDR_STR, PCM_STR, PCM_MODE_WRITE,
 		       PCM_MODE_MMAP);
 		exit(EXIT_FAILURE);
@@ -56,10 +55,15 @@ int main(int argc, char *argv[])
 	char *endptr;
 
 	const char *mem_type = argv[1];
-	const char  pcm_mode = (argc == 3) ? *argv[2] : '\0';
 	//TODO: check errno for strtol
 	const int nb_loop =
-		(argc == 4) ? strtol(argv[3], &endptr, 10) : DEF_NB_LOOP;
+		(argc >= 3) ? strtol(argv[2], &endptr, 10) : DEF_NB_LOOP;
+	const char pcm_mode = (argc == 4) ? *argv[3] : '\0';
+
+	printf("mem_type = %s\nnb_loop = %d\npcm_mode = %c\n", mem_type,
+	       nb_loop, pcm_mode);
+
+	exit(EXIT_SUCCESS);
 
 	buf_src = malloc(buf_size);
 	if (!buf_src)
