@@ -8,6 +8,7 @@
 #include <string.h>
 #include <linux/fs.h>
 #include <sys/ioctl.h>
+#include <sys/mman.h>
 
 #define N 64 //MB
 
@@ -48,9 +49,12 @@ int main(int argc, char *argv[])
 	printf("Size of pcm in bytes: %llu, or %.3f MB\n", disk_size,
 	       (double)disk_size / (1024 * 1024));
 
+	addr = mmap(NULL, disk_size, PROT_READ | PROT_WRITE,
+		    MAP_SHARED | MAP_SYNC, fd, 0);
+
 	clock_gettime(CLOCK_REALTIME, &start_time_pcm);
 
-	write(fd, buf_src, buf_size);
+	memcpy(addr, buf_src, buf_size);
 
 	clock_gettime(CLOCK_REALTIME, &end_time_pcm);
 
@@ -76,6 +80,7 @@ int main(int argc, char *argv[])
 	       "DDR to PCM of %d MB ns  : %ld\n",
 	       N, tv_sec_res, N, tv_nsec_res);
 
+	munmap(addr, disk_size);
 	close(fd);
 	free(buf_src);
 
