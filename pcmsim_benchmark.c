@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 	char *addr     = NULL;
 
 	const char *mem_type = argv[1];
-	const char  pcm_mode = (argc == 3) ? argv[2] : '\0';
+	const char  pcm_mode = (argc == 3) ? *argv[2] : '\0';
 
 	buf_src = malloc(buf_size);
 	if (!buf_src)
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 	return EXIT_SUCCESS;
 }
 
-void bench_init(const char *mode, const char pcm_mode, int *fd, char **addr)
+void bench_init(const char *mem_type, const char pcm_mode, int *fd, char **addr)
 {
 	/* 
 	// In order not to use cache:
@@ -87,13 +87,13 @@ void bench_init(const char *mode, const char pcm_mode, int *fd, char **addr)
 	//(maybe only useful for pcm_bench)
 	system("sync");*/
 
-	if (!strcmp(mode, DDR_STR)) {
+	if (!strcmp(mem_type, DDR_STR)) {
 		*addr = malloc(BUF_SIZE);
 
 		if (!(*addr))
 			exit(EXIT_FAILURE);
 
-	} else if (!strcmp(mode, PCM_STR)) {
+	} else if (!strcmp(mem_type, PCM_STR)) {
 		*fd = open("/dev/pcm0", O_RDWR | O_SYNC, 0777);
 
 		if (*fd == -1)
@@ -103,7 +103,7 @@ void bench_init(const char *mode, const char pcm_mode, int *fd, char **addr)
 		printf("Size of pcm in bytes: %llu, or %.3f MB\n", disk_size,
 		       (double)disk_size / (1024 * 1024));
 
-		if (!strcmp(mode, PCM_MODE_MMAP)) {
+		if (pcm_mode == PCM_MODE_MMAP) {
 			*addr = mmap(NULL, disk_size, PROT_READ | PROT_WRITE,
 				     MAP_SHARED | MAP_SYNC, *fd, 0);
 			if (!(*addr))
