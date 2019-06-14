@@ -159,9 +159,10 @@ void print_timings(struct timespec *start_time, struct timespec *end_time,
 	} else
 		tv_nsec_res = end_time->tv_nsec - start_time->tv_nsec;
 
-	printf("DDR to PCM of %d MB sec : %ld\n"
-	       "DDR to PCM of %d MB ns  : %ld\n",
-	       BUF_SIZE_MB, tv_sec_res, BUF_SIZE_MB, tv_nsec_res);
+	printf("DDR to %s of %d MB sec : %ld\n"
+	       "DDR to %s of %d MB ns  : %ld\n",
+	       mem_type, BUF_SIZE_MB, tv_sec_res, mem_type, BUF_SIZE_MB,
+	       tv_nsec_res);
 }
 
 void bench_exit(const char *mode, int *fd, char **addr)
