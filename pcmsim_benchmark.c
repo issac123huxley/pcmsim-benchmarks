@@ -40,9 +40,10 @@ void bench_exit(const char *mem_type, const char pcm_mode, int *fd,
 int main(int argc, char *argv[])
 {
 	if (argc < 2 || argc > 4) {
-		printf("usage: %s mem_type [nb_loop] [pcm_mode] \n"
+		printf("usage: %s mem_type [pcm_mode] [nb_loop] \n"
 		       "mem_types are %s and %s\n"
-		       "modes are %c for write and %c for mmap\n",
+		       "modes are %c for write and %c for mmap\n"
+		       "FOR DDR PUT 0 INSTEAD\n",
 		       argv[0], DDR_STR, PCM_STR, PCM_MODE_WRITE,
 		       PCM_MODE_MMAP);
 		exit(EXIT_FAILURE);
@@ -55,10 +56,10 @@ int main(int argc, char *argv[])
 	char *endptr;
 
 	const char *mem_type = argv[1];
+	const char  pcm_mode = (argc == 3) ? *argv[2] : '\0';
 	//TODO: check errno for strtol
 	const int nb_loop =
-		(argc == 3) ? strtol(argv[2], &endptr, 10) : DEF_NB_LOOP;
-	const char pcm_mode = (argc == 4) ? *argv[3] : '\0';
+		(argc == 4) ? strtol(argv[3], &endptr, 10) : DEF_NB_LOOP;
 
 	buf_src = malloc(buf_size);
 	if (!buf_src)
@@ -99,25 +100,34 @@ void bench_init(const char *mem_type, const char pcm_mode, int *fd, char **addr)
 			exit(EXIT_FAILURE);
 
 	} else if (!strcmp(mem_type, PCM_STR)) {
-		*fd = open("/dev/pcm0", O_RDWR | O_SYNC, 0777);
+		if (pcm_mode == PCM_MODE_MMAP || pcm_mode == PCM_MODE_WRITE) {
+			*fd = open("/dev/pcm0", O_RDWR | O_SYNC, 0777);
 
-		if (*fd == -1)
-			handle_error("open");
+			if (*fd == -1)
+				handle_error("open");
 
-		ioctl(*fd, BLKGETSIZE64, &disk_size);
-		printf("Size of pcm in bytes: %llu, or %.3f MB\n", disk_size,
-		       (double)disk_size / (1024 * 1024));
+			ioctl(*fd, BLKGETSIZE64, &disk_size);
+			printf("Size of pcm in bytes: %llu, or %.3f MB\n",
+			       disk_size, (double)disk_size / (1024 * 1024));
 
-		if (pcm_mode == PCM_MODE_MMAP) {
-			*addr = mmap(NULL, disk_size, PROT_READ | PROT_WRITE,
-				     MAP_SHARED | MAP_SYNC, *fd, 0);
-			if (!(*addr))
-				handle_error("mmap");
+			if (pcm_mode == PCM_MODE_MMAP) {
+				*addr = mmap(NULL, disk_size,
+					     PROT_READ | PROT_WRITE,
+					     MAP_SHARED | MAP_SYNC, *fd, 0);
+				if (!(*addr))
+					handle_error("mmap");
+			}
+
+		} else {
+			printf("no such pcm_mode\pcm_modes are %c and %c\n",
+			       PCM_MODE_WRITE, PCM_MODE_MMAP);
+			exit(EXIT_FAILURE);
 		}
 
 	} else {
-		printf("no such memtype exists\nmmem_types are %s and %s\n",
-		       DDR_STR, PCM_STR);
+		printf("no such memtype\nmmem_types are %s and %s\n", DDR_STR,
+		       PCM_STR);
+		exit(EXIT_FAILURE);
 	}
 }
 
