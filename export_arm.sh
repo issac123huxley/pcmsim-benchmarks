@@ -5,10 +5,8 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
-rm /run/media/luisky/rootfs/root/ddr_bench_arm
-rm /run/media/luisky/rootfs/root/pcm_bench_arm
-cp ddr_bench_arm /run/media/luisky/rootfs/root/ddr_bench_arm
-cp pcm_bench_arm /run/media/luisky/rootfs/root/pcm_bench_arm
+rm /run/media/luisky/rootfs/root/pcmsim_benchmark
+cp ddr_bench_arm /run/media/luisky/rootfs/root/pcmsim_benchmark
 
 if [ $? = 1 ]
 then
