@@ -98,6 +98,10 @@ void bench_init(const char *mem_type, const char pcm_mode, int *fd, char **addr)
 		if (!(*addr))
 			exit(EXIT_FAILURE);
 
+		puts("************");
+		puts("DDR benchark");
+		puts("************");
+
 	} else if (!strcmp(mem_type, PCM_STR)) {
 		if (pcm_mode == PCM_MODE_MMAP || pcm_mode == PCM_MODE_WRITE) {
 			*fd = open("/dev/pcm0", O_RDWR | O_SYNC, 0777);
@@ -115,6 +119,15 @@ void bench_init(const char *mem_type, const char pcm_mode, int *fd, char **addr)
 					     MAP_SHARED | MAP_SYNC, *fd, 0);
 				if (!(*addr))
 					handle_error("mmap");
+
+				puts("*************************");
+				puts("PCM benchmark with mmap()");
+				puts("*************************");
+
+			} else {
+				puts("*************************");
+				puts("PCM benchamrk with write()");
+				puts("*************************");
 			}
 
 		} else {
