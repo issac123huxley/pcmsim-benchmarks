@@ -17,14 +17,12 @@
 		exit(EXIT_FAILURE);                                            \
 	} while (0)
 
+void bench_write(int fd, void *src, size_t len);
+
 int main(int argc, char *argv[])
 {
-	char *		   addr; // equivalent to buf_cpy in ddr_bench
 	int		   fd;
-	struct timespec    start_time_pcm, end_time_pcm;
-	unsigned long long disk_size   = 0;
-	__time_t	   tv_sec_res  = 0;
-	__syscall_slong_t  tv_nsec_res = 0;
+	unsigned long long disk_size = 0;
 
 	// In order not to use cache:
 	// must be root to do that, so either sudo or su
@@ -49,94 +47,51 @@ int main(int argc, char *argv[])
 	       (double)disk_size / (1024 * 1024));
 
 	puts("first write");
-	clock_gettime(CLOCK_REALTIME, &start_time_pcm);
-
-	write(fd, buf_src, buf_size);
-
-	clock_gettime(CLOCK_REALTIME, &end_time_pcm);
-
-	// timings
-
-	printf("start_time_pcm.tv_sec   : %ld\n"
-	       "start_time_pcm.tv_nsec  : %ld\n",
-	       start_time_pcm.tv_sec, start_time_pcm.tv_nsec);
-
-	printf("end_time_pcm.tv_sec     : %ld\n"
-	       "end_time_pcm.tv_nsec    : %ld\n",
-	       end_time_pcm.tv_sec, end_time_pcm.tv_nsec);
-
-	tv_sec_res = end_time_pcm.tv_sec - start_time_pcm.tv_sec;
-	if (start_time_pcm.tv_nsec > end_time_pcm.tv_nsec) {
-		tv_sec_res--;
-		tv_nsec_res = (1000000000 - start_time_pcm.tv_nsec) +
-			      end_time_pcm.tv_nsec;
-	} else
-		tv_nsec_res = end_time_pcm.tv_nsec - start_time_pcm.tv_nsec;
-
-	printf("DDR to PCM of %d MB sec : %ld\n"
-	       "DDR to PCM of %d MB ns  : %ld\n",
-	       N, tv_sec_res, N, tv_nsec_res);
+	bench_write(fd, buf_src, buf_size);
 
 	puts("second write");
-	clock_gettime(CLOCK_REALTIME, &start_time_pcm);
-
-	write(fd, buf_src, buf_size);
-
-	clock_gettime(CLOCK_REALTIME, &end_time_pcm);
-
-	// timings
-
-	printf("start_time_pcm.tv_sec   : %ld\n"
-	       "start_time_pcm.tv_nsec  : %ld\n",
-	       start_time_pcm.tv_sec, start_time_pcm.tv_nsec);
-
-	printf("end_time_pcm.tv_sec     : %ld\n"
-	       "end_time_pcm.tv_nsec    : %ld\n",
-	       end_time_pcm.tv_sec, end_time_pcm.tv_nsec);
-
-	tv_sec_res = end_time_pcm.tv_sec - start_time_pcm.tv_sec;
-	if (start_time_pcm.tv_nsec > end_time_pcm.tv_nsec) {
-		tv_sec_res--;
-		tv_nsec_res = (1000000000 - start_time_pcm.tv_nsec) +
-			      end_time_pcm.tv_nsec;
-	} else
-		tv_nsec_res = end_time_pcm.tv_nsec - start_time_pcm.tv_nsec;
-
-	printf("DDR to PCM of %d MB sec : %ld\n"
-	       "DDR to PCM of %d MB ns  : %ld\n",
-	       N, tv_sec_res, N, tv_nsec_res);
+	bench_write(fd, buf_src, buf_size);
 
 	puts("third write");
-	clock_gettime(CLOCK_REALTIME, &start_time_pcm);
-
-	write(fd, buf_src, buf_size);
-
-	clock_gettime(CLOCK_REALTIME, &end_time_pcm);
-
-	// timings
-
-	printf("start_time_pcm.tv_sec   : %ld\n"
-	       "start_time_pcm.tv_nsec  : %ld\n",
-	       start_time_pcm.tv_sec, start_time_pcm.tv_nsec);
-
-	printf("end_time_pcm.tv_sec     : %ld\n"
-	       "end_time_pcm.tv_nsec    : %ld\n",
-	       end_time_pcm.tv_sec, end_time_pcm.tv_nsec);
-
-	tv_sec_res = end_time_pcm.tv_sec - start_time_pcm.tv_sec;
-	if (start_time_pcm.tv_nsec > end_time_pcm.tv_nsec) {
-		tv_sec_res--;
-		tv_nsec_res = (1000000000 - start_time_pcm.tv_nsec) +
-			      end_time_pcm.tv_nsec;
-	} else
-		tv_nsec_res = end_time_pcm.tv_nsec - start_time_pcm.tv_nsec;
-
-	printf("DDR to PCM of %d MB sec : %ld\n"
-	       "DDR to PCM of %d MB ns  : %ld\n",
-	       N, tv_sec_res, N, tv_nsec_res);
+	bench_write(fd, buf_src, buf_size);
 
 	close(fd);
 	free(buf_src);
 
 	return EXIT_SUCCESS;
+}
+
+void bench_write(int fd, void *src, size_t len)
+{
+	struct timespec   start_time_pcm, end_time_pcm;
+	__time_t	  tv_sec_res  = 0;
+	__syscall_slong_t tv_nsec_res = 0;
+
+	clock_gettime(CLOCK_REALTIME, &start_time_pcm);
+
+	write(fd, src, len);
+
+	clock_gettime(CLOCK_REALTIME, &end_time_pcm);
+
+	// timings
+
+	printf("start_time_pcm.tv_sec   : %ld\n"
+	       "start_time_pcm.tv_nsec  : %ld\n",
+	       start_time_pcm.tv_sec, start_time_pcm.tv_nsec);
+
+	printf("end_time_pcm.tv_sec     : %ld\n"
+	       "end_time_pcm.tv_nsec    : %ld\n",
+	       end_time_pcm.tv_sec, end_time_pcm.tv_nsec);
+
+	tv_sec_res = end_time_pcm.tv_sec - start_time_pcm.tv_sec;
+	if (start_time_pcm.tv_nsec > end_time_pcm.tv_nsec) {
+		tv_sec_res--;
+		tv_nsec_res = (1000000000 - start_time_pcm.tv_nsec) +
+			      end_time_pcm.tv_nsec;
+	} else
+		tv_nsec_res = end_time_pcm.tv_nsec - start_time_pcm.tv_nsec;
+
+	printf("DDR to PCM of %d MB sec : %ld\n"
+	       "DDR to PCM of %d MB ns  : %ld\n",
+	       N, tv_sec_res, N, tv_nsec_res);
 }

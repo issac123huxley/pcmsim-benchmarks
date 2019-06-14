@@ -18,14 +18,13 @@
 		exit(EXIT_FAILURE);                                            \
 	} while (0)
 
+void bench_mmap(void *dest, void *src, size_t len);
+
 int main(int argc, char *argv[])
 {
 	char *		   addr; // equivalent to buf_cpy in ddr_bench
 	int		   fd;
-	struct timespec    start_time_pcm, end_time_pcm;
-	unsigned long long disk_size   = 0;
-	__time_t	   tv_sec_res  = 0;
-	__syscall_slong_t  tv_nsec_res = 0;
+	unsigned long long disk_size = 0;
 
 	// In order not to use cache:
 	// must be root to do that, so either sudo or su
@@ -51,10 +50,34 @@ int main(int argc, char *argv[])
 
 	addr = mmap(NULL, disk_size, PROT_READ | PROT_WRITE,
 		    MAP_SHARED | MAP_SYNC, fd, 0);
+	if (!addr)
+		handle_error("mmap");
+
+	puts("first copy");
+	bench_mmap(addr, buf_src, buf_size);
+
+	puts("second copy");
+	bench_mmap(addr, buf_src, buf_size);
+
+	puts("third copy");
+	bench_mmap(addr, buf_src, buf_size);
+
+	munmap(addr, disk_size);
+	close(fd);
+	free(buf_src);
+
+	return EXIT_SUCCESS;
+}
+
+void bench_mmap(void *dest, void *src, size_t len)
+{
+	struct timespec   start_time_pcm, end_time_pcm;
+	__time_t	  tv_sec_res  = 0;
+	__syscall_slong_t tv_nsec_res = 0;
 
 	clock_gettime(CLOCK_REALTIME, &start_time_pcm);
 
-	memcpy(addr, buf_src, buf_size);
+	memcpy(dest, src, len);
 
 	clock_gettime(CLOCK_REALTIME, &end_time_pcm);
 
@@ -79,10 +102,4 @@ int main(int argc, char *argv[])
 	printf("DDR to PCM of %d MB sec : %ld\n"
 	       "DDR to PCM of %d MB ns  : %ld\n",
 	       N, tv_sec_res, N, tv_nsec_res);
-
-	munmap(addr, disk_size);
-	close(fd);
-	free(buf_src);
-
-	return EXIT_SUCCESS;
 }

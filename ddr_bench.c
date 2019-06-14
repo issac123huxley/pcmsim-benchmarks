@@ -7,12 +7,10 @@
 
 #define N 64 //MB
 
+void bench_ddr(void *dest, void *src, size_t len);
+
 int main(int argc, char **argv)
 {
-	struct timespec   start_time_ddr, end_time_ddr;
-	__time_t	  tv_sec_res  = 0;
-	__syscall_slong_t tv_nsec_res = 0;
-
 	// sizeof(int) = 4;
 	// the stack is only 8Mb, me need malloc for such huge buffers
 
@@ -33,9 +31,30 @@ int main(int argc, char **argv)
 
 	memset(buf_src, 0, buf_size);
 
+	puts("first copy");
+	bench_ddr(buf_cpy, buf_src, buf_size);
+
+	puts("second copy");
+	bench_ddr(buf_cpy, buf_src, buf_size);
+
+	puts("third copy");
+	bench_ddr(buf_cpy, buf_src, buf_size);
+
+	free(buf_src);
+	free(buf_cpy);
+
+	return EXIT_SUCCESS;
+}
+
+void bench_ddr(void *dest, void *src, size_t len)
+{
+	struct timespec   start_time_ddr, end_time_ddr;
+	__time_t	  tv_sec_res  = 0;
+	__syscall_slong_t tv_nsec_res = 0;
+
 	clock_gettime(CLOCK_REALTIME, &start_time_ddr);
 
-	memcpy(buf_cpy, buf_src, buf_size);
+	memcpy(dest, src, len);
 
 	clock_gettime(CLOCK_REALTIME, &end_time_ddr);
 
@@ -60,9 +79,4 @@ int main(int argc, char **argv)
 	printf("DDR to DDR of %d MB sec : %ld\n"
 	       "DDR to DDR of %d MB ns  : %ld\n",
 	       N, tv_sec_res, N, tv_nsec_res);
-
-	free(buf_src);
-	free(buf_cpy);
-
-	return EXIT_SUCCESS;
 }
