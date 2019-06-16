@@ -280,7 +280,7 @@ void memory_read(const void *buffer, size_t size)
 #endif
 }
 
-inline void drop_cache(void)
+void drop_cache(void)
 {
 	// In order not to use cache:
 	// must be root to do that, so either sudo or su
