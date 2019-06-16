@@ -30,12 +30,13 @@ unsigned long long disk_size = 0;
 
 void bench_init(const char *mem_type, const char pcm_mode, int *fd,
 		char **addr);
-void bench_write(int fd, void *src, size_t len);
+void bench_write_read(int fd, void *src, size_t len);
 void bench_memcpy(void *dest, void *src, size_t len, const char *mem_type);
 void print_timings(struct timespec *start_time, struct timespec *end_time,
 		   const char *mem_type);
 void bench_exit(const char *mem_type, const char pcm_mode, int *fd,
 		char **addr);
+void memory_read(const void *buffer, size_t size);
 
 int main(int argc, char *argv[])
 {
@@ -74,10 +75,10 @@ int main(int argc, char *argv[])
 		system("echo 3 > /proc/sys/vm/drop_caches");
 		// In order to sync data to persistent memory
 		//(maybe only useful for pcm_bench) //TODO: for now remove
-		//system("sync");
+		system("sync");
 		printf("Iteration number %d : \n", i);
 		if (!strcmp(mem_type, PCM_STR) && (pcm_mode == PCM_MODE_WRITE))
-			bench_write(fd, buf_src, buf_size);
+			bench_write_read(fd, buf_src, buf_size);
 		else
 			bench_memcpy(addr, buf_src, buf_size, mem_type);
 	}
@@ -141,7 +142,7 @@ void bench_init(const char *mem_type, const char pcm_mode, int *fd, char **addr)
 	}
 }
 
-void bench_write(int fd, void *src, size_t len)
+void bench_write_read(int fd, void *src, size_t len)
 {
 	struct timespec start_time, end_time;
 
@@ -151,6 +152,16 @@ void bench_write(int fd, void *src, size_t len)
 	write(fd, src, len);
 	clock_gettime(CLOCK_REALTIME, &end_time);
 
+	printf("WRITE:\n");
+	print_timings(&start_time, &end_time, PCM_STR);
+
+	lseek(fd, 0, SEEK_SET);
+
+	clock_gettime(CLOCK_REALTIME, &start_time);
+	read(fd, src, len);
+	clock_gettime(CLOCK_REALTIME, &end_time);
+
+	printf("READ:\n");
 	print_timings(&start_time, &end_time, PCM_STR);
 }
 
@@ -162,6 +173,14 @@ void bench_memcpy(void *dest, void *src, size_t len, const char *mem_type)
 	memcpy(dest, src, len);
 	clock_gettime(CLOCK_REALTIME, &end_time);
 
+	printf("MEMCPY:\n");
+	print_timings(&start_time, &end_time, mem_type);
+
+	clock_gettime(CLOCK_REALTIME, &start_time);
+	memory_read(dest, len);
+	clock_gettime(CLOCK_REALTIME, &end_time);
+
+	printf("MEMREAD:\n");
 	print_timings(&start_time, &end_time, mem_type);
 }
 
@@ -202,4 +221,56 @@ void bench_exit(const char *mode, const char pcm_mode, int *fd, char **addr)
 			munmap(addr, disk_size);
 		close(*fd);
 	}
+}
+
+// taken from PCMSIM memory.c
+void memory_read(const void *buffer, size_t size)
+{
+#ifdef __arm__
+	int		       i = 0;
+	unsigned char *	s = (unsigned char *)buffer;
+	volatile unsigned char x0, x1, x2, x3, x4, x5, x6, x7;
+
+	for (i = size >> 3; i > 0; i--) {
+		x0 = *s++;
+		x1 = *s++;
+		x2 = *s++;
+		x3 = *s++;
+		x4 = *s++;
+		x5 = *s++;
+		x6 = *s++;
+		x7 = *s++;
+	}
+
+	if (size & 1 << 2) {
+		x0 = *s++;
+		x1 = *s++;
+		x2 = *s++;
+		x3 = *s++;
+	}
+
+	if (size & 1 << 1) {
+		x0 = *s++;
+		x1 = *s++;
+	}
+
+	if (size & 1)
+		x0 = *s++;
+#elif __i386__
+	int d0, d1;
+	asm volatile("rep ; lodsl\n\t"
+		     "movl %4,%%ecx\n\t"
+		     "rep ; lodsb\n\t"
+		     : "=&c"(d0), "=&S"(d1)
+		     : "0"(size >> 2), "g"(size & 3), "1"(buffer)
+		     : "memory");
+#elif __amd64__
+	long d0, d1;
+	asm volatile("rep ; lodsq\n\t"
+		     "movq %4,%%rcx\n\t"
+		     "rep ; lodsb\n\t"
+		     : "=&c"(d0), "=&S"(d1)
+		     : "0"(size >> 3), "g"(size & 7), "1"(buffer)
+		     : "memory");
+#endif
 }
