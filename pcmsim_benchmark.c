@@ -265,15 +265,15 @@ void memory_read(const void *buffer, size_t size)
 	volatile unsigned char  x3;
 
 	for (i = size >> 3; i > 0; i -= 8) {
-		x0 = (*((long *)s))++;
+		x0 = (*((unsigned long *)s))++;
 	}
 
 	if (size & 1 << 2) {
-		x1 = (*((int *)s))++;
+		x1 = (*((unsigned int *)s))++;
 	}
 
 	if (size & 1 << 1) {
-		x2 = (*((short *)s))++;
+		x2 = (*((unsigned short *)s))++;
 	}
 
 	if (size & 1)
