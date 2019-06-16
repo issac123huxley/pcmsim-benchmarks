@@ -37,6 +37,7 @@ void print_timings(struct timespec *start_time, struct timespec *end_time,
 void bench_exit(const char *mem_type, const char pcm_mode, int *fd,
 		char **addr);
 void memory_read(const void *buffer, size_t size);
+inline void drop_cache(void);
 
 int main(int argc, char *argv[])
 {
@@ -70,12 +71,6 @@ int main(int argc, char *argv[])
 	bench_init(mem_type, pcm_mode, &fd, &addr);
 
 	for (int i = 0; i < nb_loop; i++) {
-		// In order not to use cache:
-		// must be root to do that, so either sudo or su
-		system("echo 3 > /proc/sys/vm/drop_caches");
-		// In order to sync data to persistent memory
-		//(maybe only useful for pcm_bench) //TODO: for now remove
-		system("sync");
 		printf("Iteration number %d : \n", i);
 		if (!strcmp(mem_type, PCM_STR) && (pcm_mode == PCM_MODE_WRITE))
 			bench_write_read(fd, buf_src, buf_size);
@@ -148,6 +143,7 @@ void bench_write_read(int fd, void *src, size_t len)
 
 	lseek(fd, 0, SEEK_SET);
 
+	drop_cache();
 	clock_gettime(CLOCK_REALTIME, &start_time);
 	write(fd, src, len);
 	clock_gettime(CLOCK_REALTIME, &end_time);
@@ -157,6 +153,7 @@ void bench_write_read(int fd, void *src, size_t len)
 
 	lseek(fd, 0, SEEK_SET);
 
+	drop_cache();
 	clock_gettime(CLOCK_REALTIME, &start_time);
 	read(fd, src, len);
 	clock_gettime(CLOCK_REALTIME, &end_time);
@@ -169,6 +166,7 @@ void bench_memcpy(void *dest, void *src, size_t len, const char *mem_type)
 {
 	struct timespec start_time, end_time;
 
+	drop_cache();
 	clock_gettime(CLOCK_REALTIME, &start_time);
 	memcpy(dest, src, len);
 	clock_gettime(CLOCK_REALTIME, &end_time);
@@ -176,6 +174,7 @@ void bench_memcpy(void *dest, void *src, size_t len, const char *mem_type)
 	printf("MEMCPY:\n");
 	print_timings(&start_time, &end_time, mem_type);
 
+	drop_cache();
 	clock_gettime(CLOCK_REALTIME, &start_time);
 	memory_read(dest, len);
 	clock_gettime(CLOCK_REALTIME, &end_time);
@@ -279,4 +278,14 @@ void memory_read(const void *buffer, size_t size)
 	if (size & 1)
 		x3 = *s++;
 #endif
+}
+
+inline void drop_cache(void)
+{
+	// In order not to use cache:
+	// must be root to do that, so either sudo or su
+	system("echo 3 > /proc/sys/vm/drop_caches");
+	// In order to sync data to persistent memory
+	//(maybe only useful for pcm_bench) //TODO: for now remove
+	system("sync");
 }
