@@ -226,6 +226,37 @@ void bench_exit(const char *mode, const char pcm_mode, int *fd, char **addr)
 // taken from PCMSIM memory.c
 void memory_read(const void *buffer, size_t size)
 {
+#ifdef __arm__
+	int		       i = 0;
+	unsigned char *	s = (unsigned char *)buffer;
+	volatile unsigned char x0, x1, x2, x3, x4, x5, x6, x7;
+
+	for (i = size >> 3; i > 0; i--) {
+		x0 = *s++;
+		x1 = *s++;
+		x2 = *s++;
+		x3 = *s++;
+		x4 = *s++;
+		x5 = *s++;
+		x6 = *s++;
+		x7 = *s++;
+	}
+
+	if (size & 1 << 2) {
+		x0 = *s++;
+		x1 = *s++;
+		x2 = *s++;
+		x3 = *s++;
+	}
+
+	if (size & 1 << 1) {
+		x0 = *s++;
+		x1 = *s++;
+	}
+
+	if (size & 1)
+		x0 = *s++;
+#elif __amd64__
 	int			i = 0;
 	unsigned char *		s = (unsigned char *)buffer;
 	volatile unsigned long  x0;
@@ -247,4 +278,5 @@ void memory_read(const void *buffer, size_t size)
 
 	if (size & 1)
 		x0 = *s++;
+#endif
 }
