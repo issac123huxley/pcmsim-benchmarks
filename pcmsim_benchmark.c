@@ -277,6 +277,6 @@ void memory_read(const void *buffer, size_t size)
 	}
 
 	if (size & 1)
-		x0 = *s++;
+		x3 = *s++;
 #endif
 }
