@@ -135,7 +135,7 @@ void bench_memcpy(void *dest, void *src, size_t len)
 	clock_gettime(CLOCK_REALTIME, &end_time);
 
 	printf("MEMCPY:\n");
-	fprintf(result_file, "MEMCPY, %d", len);
+	fprintf(result_file, "MEMCPY, %d, ", len);
 	print_timings(&start_time, &end_time);
 }
 
@@ -149,7 +149,7 @@ void bench_memread(void *src, size_t len)
 	clock_gettime(CLOCK_REALTIME, &end_time);
 
 	printf("MEMREAD:\n");
-	fprintf(result_file, "MEMREAD, %d", len);
+	fprintf(result_file, "MEMREAD, %d, ", len);
 	print_timings(&start_time, &end_time);
 }
 
