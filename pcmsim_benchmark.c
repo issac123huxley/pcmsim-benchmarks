@@ -11,6 +11,9 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 
+// uncommentent this to print results to stdout
+//#define PRINT_MSG
+
 #define BUF_SIZE_MB 64
 #define BUF_SIZE BUF_SIZE_MB * 1024 * 1024
 #define DEF_NB_LOOP 10
@@ -139,7 +142,10 @@ void bench_memcpy(void *dest, void *src, size_t len)
 	memcpy(dest, src, len);
 	clock_gettime(CLOCK_REALTIME, &end_time);
 
-	printf("MEMCPY:\n");
+#ifdef PRINT_MSG
+	puts("MEMCPY:");
+#endif
+
 	print_timings(&start_time, &end_time);
 }
 
@@ -152,7 +158,10 @@ void bench_memread(void *src, size_t len)
 	memory_read(src, len);
 	clock_gettime(CLOCK_REALTIME, &end_time);
 
-	printf("MEMREAD:\n");
+#ifdef PRINT_MSG
+	puts("MEMREAD:");
+#endif
+
 	print_timings(&start_time, &end_time);
 }
 
@@ -173,21 +182,26 @@ void print_timings(struct timespec *start_time, struct timespec *end_time)
 		((tv_sec_res * 1000000) + (tv_nsec_res / 1000)), tv_sec_res,
 		tv_nsec_res, (tv_nsec_res / 1000), (tv_nsec_res / 1000000));
 
+#ifdef PRINT_MSG
 	printf("Time sec : %ld\n"
 	       "Time ns  : %ld\t%d us\t%d ms\n",
 	       tv_sec_res, tv_nsec_res, (tv_nsec_res / 1000),
 	       (tv_nsec_res / 1000000));
+#endif
 }
 
 void bench_exit(const char *mode, int *fd, char **addr)
 {
 	fclose(result_file);
+
 	if (!strcmp(mode, DDR_STR)) {
 		free(*addr);
 	} else {
 		munmap(addr, disk_size);
 		close(*fd);
 	}
+
+	puts("Done. Results in DDR or PCM file.");
 }
 
 // taken from PCMSIM memory.c
