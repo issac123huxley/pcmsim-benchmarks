@@ -29,6 +29,7 @@ FILE *		   result_file = NULL;
 
 void bench_init(const char *mem_type, int *fd, char **addr);
 void bench_memcpy(void *dest, void *src, size_t len);
+void bench_memread(void *src, size_t len);
 void print_timings(struct timespec *start_time, struct timespec *end_time);
 void bench_exit(const char *mem_type, int *fd, char **addr);
 void memory_read(const void *buffer, size_t size);
@@ -70,6 +71,8 @@ int main(int argc, char *argv[])
 		printf("Iteration number %d : \n", i);
 		fprintf(result_file, "%d, %s, ", i, mem_type);
 		bench_memcpy(addr, buf_src, buf_size);
+		fprintf(result_file, "%d, %s, ", i, mem_type);
+		bench_memread(addr, buf_size);
 	}
 
 	bench_exit(mem_type, &fd, &addr);
@@ -134,10 +137,15 @@ void bench_memcpy(void *dest, void *src, size_t len)
 	printf("MEMCPY:\n");
 	fprintf(result_file, "MEMCPY, %d", len);
 	print_timings(&start_time, &end_time);
+}
+
+void bench_memread(void *src, size_t len)
+{
+	struct timespec start_time, end_time;
 
 	drop_cache();
 	clock_gettime(CLOCK_REALTIME, &start_time);
-	memory_read(dest, len);
+	memory_read(src, len);
 	clock_gettime(CLOCK_REALTIME, &end_time);
 
 	printf("MEMREAD:\n");
