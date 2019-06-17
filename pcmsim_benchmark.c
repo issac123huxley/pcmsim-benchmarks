@@ -74,7 +74,9 @@ int main(int argc, char *argv[])
 	fprintf(result_file, "MEMCPY, %d\n\n", buf_size);
 	fwrite(res_init_str, 1, sizeof(res_init_str), result_file);
 	for (int i = 0; i < nb_loop; i++) {
+#ifdef PRINT_MSG
 		printf("Iteration number %d : \n", i);
+#endif
 		fprintf(result_file, "%d, ", i);
 		bench_memcpy(addr, buf_src, buf_size);
 	}
@@ -82,7 +84,9 @@ int main(int argc, char *argv[])
 	fprintf(result_file, "\n\nMEMREAD, %d\n", buf_size);
 	fwrite(res_init_str, 1, sizeof(res_init_str), result_file);
 	for (int i = 0; i < nb_loop; i++) {
+#ifdef PRINT_MSG
 		printf("Iteration number %d : \n", i);
+#endif
 		fprintf(result_file, "%d, ", i);
 		bench_memread(addr, buf_size);
 	}
