@@ -41,8 +41,8 @@ inline void drop_cache(void);
 
 int main(int argc, char *argv[])
 {
-	if (argc < 2 || argc > 4) {
-		printf("usage: %s mem_type [nb_loop] [pcm_mode] \n"
+	if (argc < 4 || argc > 5) {
+		printf("usage: %s mem_type [buf_size] [nb_loop] [pcm_mode] \n"
 		       "mem_types are %s and %s\n"
 		       "modes are %c for write and %c for mmap\n",
 		       argv[0], DDR_STR, PCM_STR, PCM_MODE_WRITE,
@@ -51,16 +51,18 @@ int main(int argc, char *argv[])
 	}
 
 	int   fd;
-	int   buf_size = BUF_SIZE_MB * 1024 * 1024;
-	char *buf_src  = NULL;
-	char *addr     = NULL;
+	char *buf_src = NULL;
+	char *addr    = NULL;
 	char *endptr;
 
 	const char *mem_type = argv[1];
 	//TODO: check errno for strtol
+	const int buf_size = (argc >= 4) ?
+				     (strtol(argv[2], &endptr, 10) * 1048576) :
+				     BUF_SIZE_MB * 1048576;
 	const int nb_loop =
-		(argc >= 3) ? strtol(argv[2], &endptr, 10) : DEF_NB_LOOP;
-	const char pcm_mode = (argc == 4) ? *argv[3] : '\0';
+		(argc >= 4) ? strtol(argv[3], &endptr, 10) : DEF_NB_LOOP;
+	const char pcm_mode = (argc == 5) ? *argv[4] : '\0';
 
 	buf_src = malloc(buf_size);
 	if (!buf_src)
