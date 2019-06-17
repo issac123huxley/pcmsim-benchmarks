@@ -17,8 +17,6 @@
 
 #define DDR_STR "DDR"
 #define PCM_STR "PCM"
-#define PCM_MODE_WRITE 'W'
-#define PCM_MODE_MMAP 'M'
 
 #define handle_error(msg)                                                      \
 	do {                                                                   \
@@ -26,27 +24,22 @@
 		exit(EXIT_FAILURE);                                            \
 	} while (0)
 
-unsigned long long disk_size = 0;
+unsigned long long disk_size   = 0;
+FILE *		   result_file = NULL;
 
-void bench_init(const char *mem_type, const char pcm_mode, int *fd,
-		char **addr);
-void bench_write_read(int fd, void *src, size_t len);
-void bench_memcpy(void *dest, void *src, size_t len, const char *mem_type);
-void print_timings(struct timespec *start_time, struct timespec *end_time,
-		   const char *mem_type);
-void bench_exit(const char *mem_type, const char pcm_mode, int *fd,
-		char **addr);
+void bench_init(const char *mem_type, int *fd, char **addr);
+void bench_memcpy(void *dest, void *src, size_t len);
+void print_timings(struct timespec *start_time, struct timespec *end_time);
+void bench_exit(const char *mem_type, int *fd, char **addr);
 void memory_read(const void *buffer, size_t size);
 inline void drop_cache(void);
 
 int main(int argc, char *argv[])
 {
 	if (argc < 4 || argc > 5) {
-		printf("usage: %s mem_type [buf_size] [nb_loop] [pcm_mode] \n"
-		       "mem_types are %s and %s\n"
-		       "modes are %c for write and %c for mmap\n",
-		       argv[0], DDR_STR, PCM_STR, PCM_MODE_WRITE,
-		       PCM_MODE_MMAP);
+		printf("usage: %s mem_type [buf_size] [nb_loop]\n"
+		       "mem_types are %s and %s, buf_size in MB\n",
+		       argv[0], DDR_STR, PCM_STR);
 		exit(EXIT_FAILURE);
 	}
 
@@ -55,14 +48,13 @@ int main(int argc, char *argv[])
 	char *addr    = NULL;
 	char *endptr;
 
-	const char *mem_type = argv[1];
 	//TODO: check errno for strtol
-	const int buf_size = (argc >= 4) ?
+	const char *mem_type = argv[1];
+	const int   buf_size = (argc >= 3) ?
 				     (strtol(argv[2], &endptr, 10) * 1048576) :
 				     BUF_SIZE_MB * 1048576;
 	const int nb_loop =
 		(argc >= 4) ? strtol(argv[3], &endptr, 10) : DEF_NB_LOOP;
-	const char pcm_mode = (argc == 5) ? *argv[4] : '\0';
 
 	buf_src = malloc(buf_size);
 	if (!buf_src)
@@ -70,24 +62,30 @@ int main(int argc, char *argv[])
 
 	memset(buf_src, 0, buf_size);
 
-	bench_init(mem_type, pcm_mode, &fd, &addr);
+	bench_init(mem_type, &fd, &addr);
+
+	char iter[64];
 
 	for (int i = 0; i < nb_loop; i++) {
 		printf("Iteration number %d : \n", i);
-		if (!strcmp(mem_type, PCM_STR) && (pcm_mode == PCM_MODE_WRITE))
-			bench_write_read(fd, buf_src, buf_size);
-		else
-			bench_memcpy(addr, buf_src, buf_size, mem_type);
+		fprintf(result_file, "%d, %s, ", i, mem_type);
+		bench_memcpy(addr, buf_src, buf_size);
 	}
 
-	bench_exit(mem_type, pcm_mode, &fd, &addr);
+	bench_exit(mem_type, &fd, &addr);
 	free(buf_src);
 
 	return EXIT_SUCCESS;
 }
 
-void bench_init(const char *mem_type, const char pcm_mode, int *fd, char **addr)
+void bench_init(const char *mem_type, int *fd, char **addr)
 {
+	result_file = fopen(mem_type, "w+");
+
+	char res_init_str[] =
+		"iter, mem_type, op, size, time_s, time_ns, time_us, time_ms\n";
+	fwrite(res_init_str, 1, sizeof(res_init_str), result_file);
+
 	if (!strcmp(mem_type, DDR_STR)) {
 		*addr = malloc(BUF_SIZE);
 
@@ -99,38 +97,23 @@ void bench_init(const char *mem_type, const char pcm_mode, int *fd, char **addr)
 		puts("************");
 
 	} else if (!strcmp(mem_type, PCM_STR)) {
-		if (pcm_mode == PCM_MODE_MMAP || pcm_mode == PCM_MODE_WRITE) {
-			*fd = open("/dev/pcm0", O_RDWR | O_SYNC, 0777);
+		*fd = open("/dev/pcm0", O_RDWR | O_SYNC, 0777);
 
-			if (*fd == -1)
-				handle_error("open");
+		if (*fd == -1)
+			handle_error("open");
 
-			ioctl(*fd, BLKGETSIZE64, &disk_size);
-			printf("Size of pcm in bytes: %llu, or %.3f MB\n",
-			       disk_size, (double)disk_size / (1024 * 1024));
+		ioctl(*fd, BLKGETSIZE64, &disk_size);
+		printf("Size of pcm in bytes: %llu, or %.3f MB\n", disk_size,
+		       (double)disk_size / (1024 * 1024));
 
-			if (pcm_mode == PCM_MODE_MMAP) {
-				*addr = mmap(NULL, disk_size,
-					     PROT_READ | PROT_WRITE,
-					     MAP_SHARED | MAP_SYNC, *fd, 0);
-				if (!(*addr))
-					handle_error("mmap");
+		*addr = mmap(NULL, disk_size, PROT_READ | PROT_WRITE,
+			     MAP_SHARED | MAP_SYNC, *fd, 0);
+		if (!(*addr))
+			handle_error("mmap");
 
-				puts("*************************");
-				puts("PCM benchmark with mmap()");
-				puts("*************************");
-
-			} else {
-				puts("*************************");
-				puts("PCM benchamrk with write()");
-				puts("*************************");
-			}
-
-		} else {
-			printf("no such pcm_mode\npcm_modes are %c and %c\n",
-			       PCM_MODE_WRITE, PCM_MODE_MMAP);
-			exit(EXIT_FAILURE);
-		}
+		puts("*************");
+		puts("PCM benchmark");
+		puts("*************");
 
 	} else {
 		printf("no such memtype\nmmem_types are %s and %s\n", DDR_STR,
@@ -139,32 +122,7 @@ void bench_init(const char *mem_type, const char pcm_mode, int *fd, char **addr)
 	}
 }
 
-void bench_write_read(int fd, void *src, size_t len)
-{
-	struct timespec start_time, end_time;
-
-	lseek(fd, 0, SEEK_SET);
-
-	drop_cache();
-	clock_gettime(CLOCK_REALTIME, &start_time);
-	write(fd, src, len);
-	clock_gettime(CLOCK_REALTIME, &end_time);
-
-	printf("WRITE:\n");
-	print_timings(&start_time, &end_time, PCM_STR);
-
-	lseek(fd, 0, SEEK_SET);
-
-	drop_cache();
-	clock_gettime(CLOCK_REALTIME, &start_time);
-	read(fd, src, len);
-	clock_gettime(CLOCK_REALTIME, &end_time);
-
-	printf("READ:\n");
-	print_timings(&start_time, &end_time, PCM_STR);
-}
-
-void bench_memcpy(void *dest, void *src, size_t len, const char *mem_type)
+void bench_memcpy(void *dest, void *src, size_t len)
 {
 	struct timespec start_time, end_time;
 
@@ -174,7 +132,8 @@ void bench_memcpy(void *dest, void *src, size_t len, const char *mem_type)
 	clock_gettime(CLOCK_REALTIME, &end_time);
 
 	printf("MEMCPY:\n");
-	print_timings(&start_time, &end_time, mem_type);
+	fprintf(result_file, "MEMCPY, %d", len);
+	print_timings(&start_time, &end_time);
 
 	drop_cache();
 	clock_gettime(CLOCK_REALTIME, &start_time);
@@ -182,22 +141,14 @@ void bench_memcpy(void *dest, void *src, size_t len, const char *mem_type)
 	clock_gettime(CLOCK_REALTIME, &end_time);
 
 	printf("MEMREAD:\n");
-	print_timings(&start_time, &end_time, mem_type);
+	fprintf(result_file, "MEMREAD, %d", len);
+	print_timings(&start_time, &end_time);
 }
 
-void print_timings(struct timespec *start_time, struct timespec *end_time,
-		   const char *mem_type)
+void print_timings(struct timespec *start_time, struct timespec *end_time)
 {
 	__time_t	  tv_sec_res  = 0;
 	__syscall_slong_t tv_nsec_res = 0;
-
-	printf("start_time_pcm.tv_sec   : %ld\n"
-	       "start_time_pcm.tv_nsec  : %ld\n",
-	       start_time->tv_sec, start_time->tv_nsec);
-
-	printf("end_time_pcm.tv_sec     : %ld\n"
-	       "end_time_pcm.tv_nsec    : %ld\n",
-	       end_time->tv_sec, end_time->tv_nsec);
 
 	tv_sec_res = end_time->tv_sec - start_time->tv_sec;
 	if (start_time->tv_nsec > end_time->tv_nsec) {
@@ -207,19 +158,22 @@ void print_timings(struct timespec *start_time, struct timespec *end_time,
 	} else
 		tv_nsec_res = end_time->tv_nsec - start_time->tv_nsec;
 
-	printf("DDR to %s of %d MB sec : %ld\n"
-	       "DDR to %s of %d MB ns  : %ld\t%d us\t%d ms\n",
-	       mem_type, BUF_SIZE_MB, tv_sec_res, mem_type, BUF_SIZE_MB,
-	       tv_nsec_res, (tv_nsec_res / 1000), (tv_nsec_res / 1000000));
+	fprintf(result_file, "%ld, %ld, %ld, %ld\n", tv_sec_res, tv_nsec_res,
+		(tv_nsec_res / 1000), (tv_nsec_res / 1000000));
+
+	printf("Time sec : %ld\n"
+	       "Time ns  : %ld\t%d us\t%d ms\n",
+	       tv_sec_res, tv_nsec_res, (tv_nsec_res / 1000),
+	       (tv_nsec_res / 1000000));
 }
 
-void bench_exit(const char *mode, const char pcm_mode, int *fd, char **addr)
+void bench_exit(const char *mode, int *fd, char **addr)
 {
+	fclose(result_file);
 	if (!strcmp(mode, DDR_STR)) {
 		free(*addr);
 	} else {
-		if (pcm_mode == PCM_MODE_MMAP)
-			munmap(addr, disk_size);
+		munmap(addr, disk_size);
 		close(*fd);
 	}
 }
