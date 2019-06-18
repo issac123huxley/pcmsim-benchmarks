@@ -97,7 +97,7 @@ void bench_init(const char *mem_type, int *fd, char **addr)
 	result_file = fopen(mem_type, "w+");
 
 	if (!strcmp(mem_type, DDR_STR)) {
-		*fd = open("/mnt", O_RDWR | O_SYNC, 0777);
+		*fd = open("/dev/ram0", O_RDWR | O_SYNC, 0777);
 
 		puts("************");
 		puts("DDR benchark");

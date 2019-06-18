@@ -5,7 +5,7 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
-mount -t tmpfs -o size=256m tmpfs_bench /mnt
+modprobe brd rd_nr=1 rd_size=268435456 max_part=1
 
 echo "tmpfs created at /mnt"
 
