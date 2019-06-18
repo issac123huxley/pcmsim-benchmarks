@@ -68,27 +68,20 @@ int main(int argc, char *argv[])
 
 	bench_init(mem_type, &fd, &addr);
 
-	char res_init_str[] =
-		"iter, time_us + time_s, time_s, time_ns, time_us, time_ms\n";
-
-	fprintf(result_file, "MEMCPY, %d\n\n", buf_size);
-	fwrite(res_init_str, 1, sizeof(res_init_str), result_file);
+	fprintf(result_file, "MEMCPY, %d\n\ntime_microseconds\n", buf_size);
 	for (int i = 0; i < nb_loop; i++) {
 #ifdef PRINT_MSG
 		printf("Iteration number %d : \n", i);
 #endif
-		fprintf(result_file, "%d, ", i);
 		bench_memcpy(addr, buf_src, buf_size);
 	}
 
 	/*
 	fprintf(result_file, "\n\nMEMREAD, %d\n", buf_size);
-	fwrite(res_init_str, 1, sizeof(res_init_str), result_file);
 	for (int i = 0; i < nb_loop; i++) {
 #ifdef PRINT_MSG
 		printf("Iteration number %d : \n", i);
 #endif
-		fprintf(result_file, "%d, ", i);
 		bench_memread(addr, buf_size);
 	}
         */
@@ -181,9 +174,8 @@ void print_timings(struct timespec *start_time, struct timespec *end_time)
 	} else
 		tv_nsec_res = end_time->tv_nsec - start_time->tv_nsec;
 
-	fprintf(result_file, "%ld, %ld, %ld, %ld, %ld\n",
-		((tv_sec_res * 1000000) + (tv_nsec_res / 1000)), tv_sec_res,
-		tv_nsec_res, (tv_nsec_res / 1000), (tv_nsec_res / 1000000));
+	fprintf(result_file, "%ld\n",
+		((tv_sec_res * 1000000) + (tv_nsec_res / 1000)));
 
 #ifdef PRINT_MSG
 	printf("Time sec : %ld\n"
