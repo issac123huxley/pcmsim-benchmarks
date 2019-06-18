@@ -189,12 +189,8 @@ void bench_exit(const char *mode, int *fd, char **addr)
 {
 	fclose(result_file);
 
-	if (!strcmp(mode, DDR_STR)) {
-		free(*addr);
-	} else {
-		munmap(addr, disk_size);
-		close(*fd);
-	}
+	munmap(addr, disk_size);
+	close(*fd);
 
 	puts("Done. Results in DDR or PCM file.");
 }
