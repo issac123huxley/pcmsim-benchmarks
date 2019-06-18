@@ -104,10 +104,7 @@ void bench_init(const char *mem_type, int *fd, char **addr)
 	result_file = fopen(mem_type, "w+");
 
 	if (!strcmp(mem_type, DDR_STR)) {
-		*addr = malloc(BUF_SIZE);
-
-		if (!(*addr))
-			exit(EXIT_FAILURE);
+		*fd = open("/mnt", O_RDWR | O_SYNC, 0777);
 
 		puts("************");
 		puts("DDR benchark");
@@ -115,18 +112,6 @@ void bench_init(const char *mem_type, int *fd, char **addr)
 
 	} else if (!strcmp(mem_type, PCM_STR)) {
 		*fd = open("/dev/pcm0", O_RDWR | O_SYNC, 0777);
-
-		if (*fd == -1)
-			handle_error("open");
-
-		ioctl(*fd, BLKGETSIZE64, &disk_size);
-		printf("Size of pcm in bytes: %llu, or %.3f MB\n", disk_size,
-		       (double)disk_size / (1024 * 1024));
-
-		*addr = mmap(NULL, disk_size, PROT_READ | PROT_WRITE,
-			     MAP_SHARED | MAP_SYNC, *fd, 0);
-		if (!(*addr))
-			handle_error("mmap");
 
 		puts("*************");
 		puts("PCM benchmark");
@@ -137,6 +122,18 @@ void bench_init(const char *mem_type, int *fd, char **addr)
 		       PCM_STR);
 		exit(EXIT_FAILURE);
 	}
+
+	if (*fd == -1)
+		handle_error("open");
+
+	ioctl(*fd, BLKGETSIZE64, &disk_size);
+	printf("Size of disk in bytes: %llu, or %.3f MB\n", disk_size,
+	       (double)disk_size / (1024 * 1024));
+
+	*addr = mmap(NULL, disk_size, PROT_READ | PROT_WRITE,
+		     MAP_SHARED | MAP_SYNC, *fd, 0);
+	if (!(*addr))
+		handle_error("mmap");
 }
 
 void bench_memcpy(void *dest, void *src, size_t len)
