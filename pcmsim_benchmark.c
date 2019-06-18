@@ -81,6 +81,7 @@ int main(int argc, char *argv[])
 		bench_memcpy(addr, buf_src, buf_size);
 	}
 
+	/*
 	fprintf(result_file, "\n\nMEMREAD, %d\n", buf_size);
 	fwrite(res_init_str, 1, sizeof(res_init_str), result_file);
 	for (int i = 0; i < nb_loop; i++) {
@@ -90,6 +91,7 @@ int main(int argc, char *argv[])
 		fprintf(result_file, "%d, ", i);
 		bench_memread(addr, buf_size);
 	}
+        */
 
 	bench_exit(mem_type, &fd, &addr);
 	free(buf_src);
