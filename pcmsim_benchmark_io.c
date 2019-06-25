@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
 	if (!buf_src)
 		handle_error("malloc");
 
-	memset(buf_src, 0, buf_size);
+	memset(buf_src, 65, buf_size);
 
 	bench_init(mem_type, &fd);
 
@@ -96,14 +96,14 @@ void bench_init(const char *mem_type, int *fd)
 	result_file = fopen(mem_type, "w+");
 
 	if (!strcmp(mem_type, DDR_STR)) {
-		*fd = open("/dev/ram0", O_RDWR | O_SYNC, 0777);
+		*fd = open("/dev/ram0", O_RDWR | O_SYNC | O_DIRECT, 0777);
 
 		puts("************");
 		puts("DDR benchark");
 		puts("************");
 
 	} else if (!strcmp(mem_type, PCM_STR)) {
-		*fd = open("/dev/pcm0", O_RDWR | O_SYNC, 0777);
+		*fd = open("/dev/pcm0", O_RDWR | O_SYNC | O_DIRECT, 0777);
 
 		puts("*************");
 		puts("PCM benchmark");
@@ -148,6 +148,10 @@ void bench_read(int fd, void *dest, size_t len)
 	read(fd, dest, len);
 	clock_gettime(CLOCK_REALTIME, &end_time);
 
+	for (int i = 0; i < 10; i++) {
+		printf("value %d : %c\n", i, ((char *)dest)[i]);
+	}
+
 #ifdef PRINT_MSG
 	puts("MEMREAD:");
 #endif
@@ -189,10 +193,9 @@ void bench_exit(const char *mode, int fd)
 
 void drop_cache(void)
 {
+	// In order to sync data to persistent memory
+	system("sync");
 	// In order not to use cache:
 	// must be root to do that, so either sudo or su
 	system("echo 3 > /proc/sys/vm/drop_caches");
-	// In order to sync data to persistent memory
-	//(maybe only useful for pcm_bench) //TODO: for now remove
-	system("sync");
 }
