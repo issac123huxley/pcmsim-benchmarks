@@ -73,6 +73,7 @@ int main(int argc, char *argv[])
 		printf("Iteration number %d : \n", i);
 #endif
 		bench_write(fd, buf_src, buf_size);
+		lseek(fd, 0, SEEK_SET);
 	}
 
 	fprintf(result_file, "\n\nMEMCPY, %d\n\ntime_microseconds\n", buf_size);
@@ -81,6 +82,7 @@ int main(int argc, char *argv[])
 		printf("Iteration number %d : \n", i);
 #endif
 		bench_read(fd, buf_src, buf_size);
+		lseek(fd, 0, SEEK_SET);
 	}
 
 	bench_exit(mem_type, fd);
