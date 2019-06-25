@@ -5,8 +5,8 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
-modprobe brd rd_nr=1 rd_size=268435456 max_part=1
+modprobe brd rd_nr=1 rd_size=131072 max_part=1
 
-echo "tmpfs created at /mnt"
+echo "ramdisk created at /dev/ram0"
 
 exit 0
