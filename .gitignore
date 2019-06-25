@@ -1,2 +1,3 @@
 .vscode/ipch/
-pcmsim_benchmark
+pcmsim_benchmark_mmap
+pcmsim_benchmark_write

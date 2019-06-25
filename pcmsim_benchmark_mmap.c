@@ -1,4 +1,6 @@
+#define _GNU_SOURCE
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -34,7 +36,7 @@ void bench_init(const char *mem_type, int *fd, char **addr);
 void bench_memcpy(void *dest, void *src, size_t len);
 void bench_memread(void *src, size_t len);
 void print_timings(struct timespec *start_time, struct timespec *end_time);
-void bench_exit(const char *mem_type, int *fd, char **addr);
+void bench_exit(const char *mem_type, int fd, char *addr);
 void memory_read(const void *buffer, size_t size);
 inline void drop_cache(void);
 
@@ -86,7 +88,7 @@ int main(int argc, char *argv[])
 	}
         */
 
-	bench_exit(mem_type, &fd, &addr);
+	bench_exit(mem_type, fd, addr);
 	free(buf_src);
 
 	return EXIT_SUCCESS;
@@ -185,12 +187,12 @@ void print_timings(struct timespec *start_time, struct timespec *end_time)
 #endif
 }
 
-void bench_exit(const char *mode, int *fd, char **addr)
+void bench_exit(const char *mode, int fd, char *addr)
 {
 	fclose(result_file);
 
 	munmap(addr, disk_size);
-	close(*fd);
+	close(fd);
 
 	puts("Done. Results in DDR or PCM file.");
 }

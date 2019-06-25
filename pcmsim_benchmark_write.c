@@ -1,4 +1,6 @@
+#define _GNU_SOURCE
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -29,12 +31,11 @@
 unsigned long long disk_size   = 0;
 FILE *		   result_file = NULL;
 
-void bench_init(const char *mem_type, int *fd, char **addr);
-void bench_write(void *dest, void *src, size_t len);
-void bench_read(void *src, size_t len);
+void bench_init(const char *mem_type, int *fd);
+void bench_write(int fd, void *src, size_t len);
+void bench_read(int fd, void *dest, size_t len);
 void print_timings(struct timespec *start_time, struct timespec *end_time);
-void bench_exit(const char *mem_type, int *fd, char **addr);
-void memory_read(const void *buffer, size_t size);
+void bench_exit(const char *mem_type, int fd);
 inline void drop_cache(void);
 
 int main(int argc, char *argv[])
@@ -48,7 +49,6 @@ int main(int argc, char *argv[])
 
 	int   fd;
 	char *buf_src = NULL;
-	char *addr    = NULL;
 	char *endptr;
 
 	//TODO: check errno for strtol
@@ -65,14 +65,14 @@ int main(int argc, char *argv[])
 
 	memset(buf_src, 0, buf_size);
 
-	bench_init(mem_type, &fd, &addr);
+	bench_init(mem_type, &fd);
 
 	fprintf(result_file, "MEMCPY, %d\n\ntime_microseconds\n", buf_size);
 	for (int i = 0; i < nb_loop; i++) {
 #ifdef PRINT_MSG
 		printf("Iteration number %d : \n", i);
 #endif
-		bench_write(addr, buf_src, buf_size);
+		bench_write(fd, buf_src, buf_size);
 	}
 
 	fprintf(result_file, "\n\nMEMCPY, %d\n\ntime_microseconds\n", buf_size);
@@ -80,16 +80,16 @@ int main(int argc, char *argv[])
 #ifdef PRINT_MSG
 		printf("Iteration number %d : \n", i);
 #endif
-		bench_read(addr, buf_size);
+		bench_read(fd, buf_src, buf_size);
 	}
 
-	bench_exit(mem_type, &fd, &addr);
+	bench_exit(mem_type, fd);
 	free(buf_src);
 
 	return EXIT_SUCCESS;
 }
 
-void bench_init(const char *mem_type, int *fd, char **addr)
+void bench_init(const char *mem_type, int *fd)
 {
 	result_file = fopen(mem_type, "w+");
 
@@ -121,13 +121,13 @@ void bench_init(const char *mem_type, int *fd, char **addr)
 	       (double)disk_size / (1024 * 1024));
 }
 
-void bench_write(void *dest, void *src, size_t len)
+void bench_write(int fd, void *src, size_t len)
 {
 	struct timespec start_time, end_time;
 
 	drop_cache();
 	clock_gettime(CLOCK_REALTIME, &start_time);
-	memcpy(dest, src, len);
+	write(fd, src, len);
 	clock_gettime(CLOCK_REALTIME, &end_time);
 
 #ifdef PRINT_MSG
@@ -137,13 +137,13 @@ void bench_write(void *dest, void *src, size_t len)
 	print_timings(&start_time, &end_time);
 }
 
-void bench_read(void *src, size_t len)
+void bench_read(int fd, void *dest, size_t len)
 {
 	struct timespec start_time, end_time;
 
 	drop_cache();
 	clock_gettime(CLOCK_REALTIME, &start_time);
-	memory_read(src, len);
+	read(fd, dest, len);
 	clock_gettime(CLOCK_REALTIME, &end_time);
 
 #ifdef PRINT_MSG
@@ -177,10 +177,10 @@ void print_timings(struct timespec *start_time, struct timespec *end_time)
 #endif
 }
 
-void bench_exit(const char *mode, int *fd, char **addr)
+void bench_exit(const char *mode, int fd)
 {
 	fclose(result_file);
-	close(*fd);
+	close(fd);
 
 	puts("Done. Results in DDR or PCM file.");
 }
