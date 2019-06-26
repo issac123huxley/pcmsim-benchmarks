@@ -63,11 +63,11 @@ int main(int argc, char *argv[])
 	if (!buf_src)
 		handle_error("malloc");
 
-	memset(buf_src, 65, buf_size);
+	memset(buf_src, 65, buf_size); // 'A' ascii
 
 	bench_init(mem_type, &fd);
 
-	fprintf(result_file, "MEMCPY, %d\n\ntime_microseconds\n", buf_size);
+	fprintf(result_file, "WRITE, %d\n\ntime_microseconds\n", buf_size);
 	for (int i = 0; i < nb_loop; i++) {
 #ifdef PRINT_MSG
 		printf("Iteration number %d : \n", i);
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 		lseek(fd, 0, SEEK_SET);
 	}
 
-	fprintf(result_file, "\n\nMEMCPY, %d\n\ntime_microseconds\n", buf_size);
+	fprintf(result_file, "\n\nREAD, %d\n\ntime_microseconds\n", buf_size);
 	for (int i = 0; i < nb_loop; i++) {
 #ifdef PRINT_MSG
 		printf("Iteration number %d : \n", i);
@@ -147,10 +147,6 @@ void bench_read(int fd, void *dest, size_t len)
 	clock_gettime(CLOCK_REALTIME, &start_time);
 	read(fd, dest, len);
 	clock_gettime(CLOCK_REALTIME, &end_time);
-
-	for (int i = 0; i < 10; i++) {
-		printf("value %d : %c\n", i, ((char *)dest)[i]);
-	}
 
 #ifdef PRINT_MSG
 	puts("MEMREAD:");
